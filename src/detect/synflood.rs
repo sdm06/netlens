@@ -47,6 +47,8 @@ impl Rule for SynFloodDetector {
             Some(Alert {
                 severity: Severity::High,
                 rule: self.name().to_string(),
+                // The alert is about the victim here, so put the destination
+                // in the src field the UI shows.
                 src: event.dst.to_string(),
                 detail: format!(
                     "{count} SYNs from {} sources in {:.0}s",

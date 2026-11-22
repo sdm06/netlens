@@ -47,6 +47,8 @@ enum Command {
     },
 }
 
+// Glue between the capture readers and the analyzer. Keeping it as a struct
+// avoids fighting HRTB bounds on a closure with a borrowed packet slice.
 struct AnalyzerVisitor<'a> {
     analyzer: &'a mut Analyzer,
 }

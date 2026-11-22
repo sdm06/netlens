@@ -47,6 +47,8 @@ fn read_i64(bytes: &[u8], le: bool) -> i64 {
     }
 }
 
+// Options are code/length/value records padded out to four bytes. Stopping at
+// the end option avoids reading padding as a bogus option.
 fn options(body: &[u8], fixed: usize, le: bool) -> impl Iterator<Item = (u16, &[u8])> {
     let mut offset = fixed;
     std::iter::from_fn(move || {
@@ -83,6 +85,8 @@ pub fn read(data: &[u8], visitor: &mut impl Visitor) -> Result<()> {
     let mut offset = 0;
 
     while offset + 12 <= data.len() {
+        // The section header is a palindrome, so it can be spotted before we
+        // know the byte order. Its magic tells us how to read everything else.
         let is_section = data[offset..offset + 4] == [0x0a, 0x0d, 0x0d, 0x0a];
         if is_section {
             let marker = [

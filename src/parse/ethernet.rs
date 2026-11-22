@@ -40,6 +40,8 @@ pub fn parse(data: &[u8]) -> Result<EthernetFrame<'_>> {
     let mut offset = 14;
     let mut vlan = None;
 
+    // QinQ exists, so loop instead of assuming a single tag. The VLAN id is
+    // kept for future filtering even though the analyzer ignores it today.
     while VLAN_TAGS.contains(&ethertype) {
         if data.len() < offset + 4 {
             bail!("truncated vlan tag");

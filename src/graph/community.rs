@@ -15,6 +15,8 @@ pub fn label_propagation(
         }
     }
 
+    // Label propagation: neighbours pull a node towards the majority label.
+    // Cheap, deterministic here, and good enough to colour a graph.
     for _ in 0..iterations {
         let mut changed = false;
         for node in 0..node_count {

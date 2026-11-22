@@ -42,6 +42,8 @@ impl Rule for PortScanDetector {
                 break;
             }
         }
+        // Count host:port pairs rather than packets. Hitting one port many
+        // times is not a scan.
         let targets: HashSet<(IpAddr, u16)> =
             events.iter().map(|&(_, dst, port)| (dst, port)).collect();
         if targets.len() >= self.threshold {

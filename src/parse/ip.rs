@@ -49,6 +49,8 @@ pub fn parse_v6(data: &[u8]) -> Result<IpPacket<'_>> {
     let mut protocol = data[6];
     let mut fragment_offset = 0;
 
+    // Walk the common extension headers until we reach a real protocol. This
+    // is enough for flow grouping; we do not need to interpret their contents.
     while matches!(protocol, 0 | 43 | 44 | 60) {
         if offset + 8 > end {
             bail!("truncated ipv6 extension header");

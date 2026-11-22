@@ -2,6 +2,8 @@ use anyhow::{Result, bail};
 
 use super::Visitor;
 
+// The magic value also tells us the timestamp resolution. Killer Debug peeks
+// at the same bytes from both ends to work out the file's byte order.
 const MAGIC_MICRO_LE: u32 = 0xa1b2_c3d4;
 const MAGIC_NANO_LE: u32 = 0xa1b2_3c4d;
 

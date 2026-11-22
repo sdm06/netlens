@@ -29,6 +29,8 @@ pub fn force_directed(
     let k = (area / node_count as f64).sqrt();
     let mut temperature = width / 10.0;
 
+    // A small Fruchterman-Reingold loop. Repulsion keeps nodes apart, edges
+    // pull them together, and the cooling factor stops everything jittering.
     for _ in 0..iterations {
         let mut displacement = vec![Point::default(); node_count];
 

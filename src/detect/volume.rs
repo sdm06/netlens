@@ -22,6 +22,7 @@ impl VolumeAnomaly {
     pub fn observe(&mut self, bytes: u64, ts: f64) -> Option<Alert> {
         self.seen += 1;
         let z = self.ewma.update(bytes as f64);
+        // Give the EWMA a few buckets to settle before trusting its mean.
         if self.seen <= self.warmup || z < self.threshold {
             return None;
         }

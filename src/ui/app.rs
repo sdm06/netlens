@@ -73,6 +73,7 @@ impl NetLensApp {
 
 impl eframe::App for NetLensApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Dropping a capture is the fastest way to get from a file to a view.
         let dropped = ctx.input(|input| input.raw.dropped_files.clone());
         if let Some(path) = dropped.first().and_then(|file| file.path.clone()) {
             self.load_path(path.to_string_lossy().into_owned());

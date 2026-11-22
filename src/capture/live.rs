@@ -25,6 +25,8 @@ fn timestamp() -> f64 {
         .map_or(0.0, |duration| duration.as_secs_f64())
 }
 
+// Raw sockets are noisy about permissions, so surface a useful message here
+// rather than letting the error bubble up as a bare io error.
 pub fn capture(
     interface: &str,
     duration_secs: Option<f64>,

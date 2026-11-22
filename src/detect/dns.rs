@@ -31,6 +31,8 @@ impl Rule for DnsTunnelDetector {
         let name = event.dns_name?;
         let score = shannon_entropy(name);
         let labels = label_count(name);
+        // No single signal is proof of tunnelling, so we need a few suspicious
+        // queries from the same host before raising an alert.
         let suspicious = name.len() >= self.min_name_len
             || score >= self.min_entropy
             || labels >= self.max_labels;

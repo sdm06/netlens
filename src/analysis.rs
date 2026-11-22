@@ -8,6 +8,8 @@ use crate::flows::aggregator::{FlowKey, FlowStats, FlowTable};
 use crate::graph::topology::Topology;
 use crate::parse;
 
+// One time slice of traffic. Keeping these around means the UI can filter
+// without ever touching the capture file again.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Bucket {
     pub start: f64,
@@ -42,6 +44,8 @@ pub struct Filters {
 }
 
 impl AnalysisSummary {
+    // Filtering rebuilds the small derived views instead of re-reading packets.
+    // That keeps the UI responsive even when the capture itself is large.
     pub fn filtered(&self, filters: &Filters) -> Self {
         let query = filters.query.trim().to_ascii_lowercase();
         let flows: Vec<FlowStats> = self
@@ -163,6 +167,8 @@ impl Analyzer {
     }
 
     pub fn observe(&mut self, ts: f64, linktype: u32, frame: &[u8]) {
+        // Every frame counts, even if we cannot decode it. The counters should
+        // agree with what tcpdump says, not with what the parsers understand.
         self.packets += 1;
         self.bytes += frame.len() as u64;
         self.first_ts = Some(self.first_ts.map_or(ts, |first| first.min(ts)));
@@ -205,6 +211,8 @@ impl Analyzer {
         let Some(ip) = ip else {
             return;
         };
+        // Non-first fragments do not carry a transport header, so there is
+        // nothing useful to attach to a flow.
         if ip.fragment_offset > 0 {
             return;
         }
