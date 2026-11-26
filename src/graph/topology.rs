@@ -28,6 +28,7 @@ pub struct Topology {
 impl Topology {
     pub fn from_flows(flows: &[FlowStats]) -> Self {
         let mut topology = Topology::default();
+        let mut edges: HashMap<(String, String), Edge> = HashMap::new();
         for flow in flows {
             let source = topology
                 .nodes
@@ -51,13 +52,21 @@ impl Topology {
             destination.packets += flow.packets;
             destination.bytes += flow.bytes;
 
-            topology.edges.push(Edge {
-                src: flow.src.clone(),
-                dst: flow.dst.clone(),
-                packets: flow.packets,
-                bytes: flow.bytes,
-            });
+            let edge = edges
+                .entry((flow.src.clone(), flow.dst.clone()))
+                .or_insert_with(|| Edge {
+                    src: flow.src.clone(),
+                    dst: flow.dst.clone(),
+                    packets: 0,
+                    bytes: 0,
+                });
+            edge.packets += flow.packets;
+            edge.bytes += flow.bytes;
         }
+        topology.edges = edges.into_values().collect();
+        topology
+            .edges
+            .sort_by_key(|edge| (edge.src.clone(), edge.dst.clone()));
         topology
     }
 }

@@ -23,23 +23,26 @@ pub fn show(ui: &mut egui::Ui, summary: &AnalysisSummary) {
         .enumerate()
         .map(|(index, id)| (*id, index))
         .collect();
-    let edges: Vec<(usize, usize)> = topology
-        .edges
-        .iter()
-        .filter_map(|edge| Some((*indices.get(&edge.src)?, *indices.get(&edge.dst)?)))
-        .collect();
-    let communities = label_propagation(ids.len(), &edges, 30);
 
-    let (rect, _) = ui.allocate_exact_size(ui.available_size(), Sense::hover());
-    let iterations = if ids.len() > 100 { 40 } else { 140 };
-    let positions = force_directed(
-        ids.len(),
-        &edges,
-        iterations,
-        rect.width() as f64,
-        rect.height() as f64,
-    );
-    let painter = ui.painter_at(rect);
+    let mut edge_totals: HashMap<(usize, usize), (u64, u64)> = HashMap::new();
+    for edge in &topology.edges {
+        let Some(&a) = indices.get(&edge.src) else {
+            continue;
+        };
+        let Some(&b) = indices.get(&edge.dst) else {
+            continue;
+        };
+        if a == b {
+            continue;
+        }
+        let key = (a.min(b), a.max(b));
+        let totals = edge_totals.entry(key).or_insert((0, 0));
+        totals.0 += edge.packets;
+        totals.1 += edge.bytes;
+    }
+    let layout_edges: Vec<(usize, usize)> = edge_totals.keys().copied().collect();
+    let communities = label_propagation(ids.len(), &layout_edges, 30);
+
     let max_bytes = topology
         .nodes
         .values()
@@ -47,14 +50,26 @@ pub fn show(ui: &mut egui::Ui, summary: &AnalysisSummary) {
         .max()
         .unwrap_or(1)
         .max(1);
+    let padding = 26.0_f64;
+    let (rect, _) = ui.allocate_exact_size(ui.available_size(), Sense::hover());
+    let iterations = if ids.len() > 100 { 40 } else { 140 };
+    let positions = force_directed(
+        ids.len(),
+        &layout_edges,
+        iterations,
+        rect.width() as f64,
+        rect.height() as f64,
+        padding,
+    );
+    let painter = ui.painter_at(rect);
 
     painter.text(
         rect.left_top() + Vec2::new(10.0, 8.0),
         Align2::LEFT_TOP,
         format!(
-            "{} nodes · {} edges · {} communities",
+            "{} nodes · {} links · {} communities",
             ids.len(),
-            topology.edges.len(),
+            edge_totals.len(),
             communities
                 .iter()
                 .copied()
@@ -65,7 +80,13 @@ pub fn show(ui: &mut egui::Ui, summary: &AnalysisSummary) {
         Color32::WHITE,
     );
 
-    for (a, b) in edges {
+    let max_edge_bytes = edge_totals
+        .values()
+        .map(|(_, bytes)| *bytes)
+        .max()
+        .unwrap_or(1)
+        .max(1);
+    for (&(a, b), &(_, bytes)) in &edge_totals {
         let from = Pos2::new(
             rect.left() + positions[a].x as f32,
             rect.top() + positions[a].y as f32,
@@ -74,9 +95,11 @@ pub fn show(ui: &mut egui::Ui, summary: &AnalysisSummary) {
             rect.left() + positions[b].x as f32,
             rect.top() + positions[b].y as f32,
         );
-        painter.line_segment([from, to], Stroke::new(1.0, Color32::from_gray(80)));
+        let width = 1.0 + 2.0 * (bytes as f64 / max_edge_bytes as f64).sqrt() as f32;
+        painter.line_segment([from, to], Stroke::new(width, Color32::from_gray(90)));
     }
 
+    let show_labels = ids.len() <= 60;
     for (index, id) in ids.iter().enumerate() {
         let point = Pos2::new(
             rect.left() + positions[index].x as f32,
@@ -87,13 +110,15 @@ pub fn show(ui: &mut egui::Ui, summary: &AnalysisSummary) {
         let radius = 6.0 + 12.0 * scale;
         let color = PALETTE[communities[index] % PALETTE.len()];
         painter.circle_filled(point, radius, color);
-        painter.circle_stroke(point, radius, Stroke::new(1.0, Color32::WHITE));
-        painter.text(
-            point + Vec2::new(radius + 4.0, 0.0),
-            Align2::LEFT_CENTER,
-            format!("{id} · {} B", node.bytes),
-            FontId::monospace(11.0),
-            Color32::WHITE,
-        );
+        painter.circle_stroke(point, radius, Stroke::new(1.0_f32, Color32::WHITE));
+        if show_labels || node.bytes as f64 * 10.0 >= max_bytes as f64 {
+            painter.text(
+                point + Vec2::new(radius + 4.0, 0.0),
+                Align2::LEFT_CENTER,
+                format!("{id} · {} B", node.bytes),
+                FontId::monospace(11.0),
+                Color32::WHITE,
+            );
+        }
     }
 }

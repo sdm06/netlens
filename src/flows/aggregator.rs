@@ -67,7 +67,7 @@ impl FlowTable {
 
     pub fn top_talkers(&self, limit: usize) -> Vec<FlowStats> {
         let mut flows = self.all();
-        flows.sort_by(|a, b| b.bytes.cmp(&a.bytes));
+        flows.sort_by_key(|flow| std::cmp::Reverse(flow.bytes));
         flows.truncate(limit);
         flows
     }

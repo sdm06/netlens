@@ -92,7 +92,7 @@ impl AnalysisSummary {
             map
         });
         let mut top_talkers = flows.clone();
-        top_talkers.sort_by(|a, b| b.bytes.cmp(&a.bytes));
+        top_talkers.sort_by_key(|flow| std::cmp::Reverse(flow.bytes));
         top_talkers.truncate(10);
 
         Self {
@@ -272,7 +272,7 @@ impl Analyzer {
 
         let all_flows = self.table.all();
         let mut top_talkers = all_flows.clone();
-        top_talkers.sort_by(|a, b| b.bytes.cmp(&a.bytes));
+        top_talkers.sort_by_key(|flow| std::cmp::Reverse(flow.bytes));
         top_talkers.truncate(10);
         let timeseries = self.buckets.into_values().collect();
 

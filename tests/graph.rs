@@ -4,11 +4,11 @@ use netlens::graph::layout::force_directed;
 #[test]
 fn layout_stays_in_bounds() {
     let edges = [(0, 1), (1, 2), (2, 3), (3, 4)];
-    let points = force_directed(5, &edges, 50, 800.0, 600.0);
+    let points = force_directed(5, &edges, 50, 800.0, 600.0, 20.0);
     assert_eq!(points.len(), 5);
     for point in points {
-        assert!(point.x >= 10.0 && point.x <= 790.0);
-        assert!(point.y >= 10.0 && point.y <= 590.0);
+        assert!(point.x >= 20.0 && point.x <= 780.0);
+        assert!(point.y >= 20.0 && point.y <= 580.0);
     }
 }
 

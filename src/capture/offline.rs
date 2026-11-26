@@ -31,7 +31,7 @@ pub fn demo_summary() -> AnalysisSummary {
 
     let all_flows = table.all();
     let mut top_talkers = all_flows.clone();
-    top_talkers.sort_by(|a, b| b.bytes.cmp(&a.bytes));
+    top_talkers.sort_by_key(|flow| std::cmp::Reverse(flow.bytes));
     top_talkers.truncate(10);
 
     let timeseries = vec![
